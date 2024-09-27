@@ -19,12 +19,11 @@ void ClientEventHandler::handleMessage(const std::string& message)
 	}
 	else
 	{
-
-
+		const char* buffer = message.c_str();
 		for (SOCKET target_socket : chatRooms[this->roomName]) 
 		{
-			if (target_socket != socket) {
-				send(socket, buffer, bytesReceived, 0);
+			if (target_socket != this->socket) {
+				send(socket, buffer, sizeof(buffer), 0);
 			}
 		}
 	}
@@ -34,7 +33,7 @@ void ClientEventHandler::Handle_Get_Chatting_Room()
 	std::string room_List = "";
 	if (chatRooms.empty())
 	{
-		room_List += "/No_Rooms";
+		room_List += NO_ROOM;
 	}
 	else
 	{
@@ -47,12 +46,23 @@ void ClientEventHandler::Handle_Get_Chatting_Room()
 }
 void ClientEventHandler::Handle_Create_Chatting_Room(const std::string& message)
 {
-
+	this->roomName = message;
+	std::string send_message = "";
+	if (chatRooms.find(roomName) != chatRooms.end())
+	{
+		send_message = EXIST_ROOM;
+		send(socket, send_message.c_str(), send_message.length(), 0);
+	}
+	else
+	{
+		chatRooms[message].insert(socket);
+		send_message = COMPLETE_CREATE_ROOM;
+		send(socket, send_message.c_str(), send_message.length(), 0);
+	}
 }
 void ClientEventHandler::Handle_Join_Chatting_Room(const std::string& message)
 {
-	this->roomName = message;
-	chatRooms[message].insert(socket);
+	
 }
 
 void ConnectClient(SOCKET clientSocket)
