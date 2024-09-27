@@ -15,8 +15,9 @@ class ClientEventHandler
 {
 private:
 	SOCKET socket;
+	std::string roomName;
 	
-	void Handle_Get_Chatting_Room(const std::string& message);
+	void Handle_Get_Chatting_Room();
 	void Handle_Create_Chatting_Room(const std::string& message);
 	void Handle_Join_Chatting_Room(const std::string& message);
 public:

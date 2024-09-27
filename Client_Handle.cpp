@@ -7,18 +7,29 @@ void ClientEventHandler::handleMessage(const std::string& message)
 
 	if(message.substr(0,GET_CHATTING_ROOM.length()) == GET_CHATTING_ROOM)
 	{
-		Handle_Get_Chatting_Room(message);
+		Handle_Get_Chatting_Room();
 	}
 	else if (message.substr(0, HANDLE_CREATE_CHATTING_ROOM.length()) == HANDLE_CREATE_CHATTING_ROOM)
 	{
-
+		Handle_Create_Chatting_Room(message.substr(HANDLE_CREATE_CHATTING_ROOM.length(), message.length()));
 	}
 	else if (message.substr(0, HANDLE_JOIN_CHATTING_ROOM.length()) == HANDLE_JOIN_CHATTING_ROOM)
 	{
+		Handle_Join_Chatting_Room(message.substr(HANDLE_JOIN_CHATTING_ROOM.length(), message.length()));
+	}
+	else
+	{
 
+
+		for (SOCKET target_socket : chatRooms[this->roomName]) 
+		{
+			if (target_socket != socket) {
+				send(socket, buffer, bytesReceived, 0);
+			}
+		}
 	}
 }
-void ClientEventHandler::Handle_Get_Chatting_Room(const std::string& message)
+void ClientEventHandler::Handle_Get_Chatting_Room()
 {
 	std::string room_List = "";
 	if (chatRooms.empty())
@@ -37,6 +48,11 @@ void ClientEventHandler::Handle_Get_Chatting_Room(const std::string& message)
 void ClientEventHandler::Handle_Create_Chatting_Room(const std::string& message)
 {
 
+}
+void ClientEventHandler::Handle_Join_Chatting_Room(const std::string& message)
+{
+	this->roomName = message;
+	chatRooms[message].insert(socket);
 }
 
 void ConnectClient(SOCKET clientSocket)
