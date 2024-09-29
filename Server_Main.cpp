@@ -1,6 +1,7 @@
 #include <iostream>
 #include <winsock2.h>
 #include <thread>
+#include "Client_Handle.h"
 int main(int argc, char* argv[])
 {
 	char message[] = "Message";
@@ -44,14 +45,23 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	SOCKET clientSocket;
-	SOCKADDR_IN clientAddr;
-	int clientAddrsize = sizeof(clientAddr);
-
-	clientSocket = accept(serverSocket, (SOCKADDR*)&clientAddr, &clientAddrsize);
-	if (clientSocket == INVALID_SOCKET)
+	while (true)
 	{
-		std::cerr << "accept() Error" << std::endl;
+		SOCKET clientSocket;
+		SOCKADDR_IN clientAddr;
+		int clientAddrsize = sizeof(clientAddr);
+
+		clientSocket = accept(serverSocket, (SOCKADDR*)&clientAddr, &clientAddrsize);
+		if (clientSocket == INVALID_SOCKET)
+		{
+			std::cerr << "accept() Error" << std::endl;
+			continue;
+		}
+
+		std::thread worker(ConnectClient, clientSocket);
+		worker.detach();
 	}
-	send(clientSocket, message, strlen(message), 0);
+
+	closesocket(serverSocket);
+	WSACleanup();
 }
