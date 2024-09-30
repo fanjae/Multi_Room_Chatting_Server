@@ -9,6 +9,8 @@ int main(int argc, char* argv[])
 	SOCKET serverSocket;
 	SOCKADDR_IN serverAddr;
 
+	SetConsoleOutputCP(CP_UTF8);
+
 	if (argc != 2)
 	{
 		std::cerr << "Usage : " << argv[0] << "  <port>";
@@ -45,6 +47,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+	std::cout << "Server Started!" << std::endl;
 	while (true)
 	{
 		SOCKET clientSocket;

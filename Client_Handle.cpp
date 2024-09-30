@@ -4,7 +4,6 @@ static std::map<std::string, std::set<SOCKET>> chatRooms;
 ClientEventHandler::ClientEventHandler(SOCKET clientSocket) : socket(clientSocket) {}
 bool ClientEventHandler::handleMessage(const std::string& message)
 {
-
 	if(message.substr(0,GET_CHATTING_ROOM.length()) == GET_CHATTING_ROOM)
 	{
 		Handle_Get_Chatting_Room();
@@ -28,12 +27,10 @@ bool ClientEventHandler::handleMessage(const std::string& message)
 	}
 	else
 	{
-		const char* buffer = message.c_str();
 		std::cout << "[Log] : roomName : " << this->roomName << std::endl;
 		for (SOCKET target_socket : chatRooms[this->roomName]) 
 		{
-			std::cout << "[Log] : target_socket : " << target_socket << std::endl;
-			send(target_socket, buffer, sizeof(buffer), 0);
+			send(target_socket, message.c_str(), message.length(), 0);
 		}
 	}
 	return true;
@@ -41,6 +38,7 @@ bool ClientEventHandler::handleMessage(const std::string& message)
 void ClientEventHandler::Handle_Get_Chatting_Room()
 {
 	std::string room_List = "";
+	std::cout << "[Log] : " << chatRooms.size() << std::endl;
 	if (chatRooms.empty())
 	{
 		room_List += NO_ROOM;
@@ -56,6 +54,7 @@ void ClientEventHandler::Handle_Get_Chatting_Room()
 }
 void ClientEventHandler::Handle_Exit_Room()
 {
+	std::cout << "[Log] : " << "Handle_exit_Room" << std::endl;
 	chatRooms[roomName].erase(this->socket);
 	if (chatRooms[roomName].empty()) 
 	{
@@ -114,7 +113,7 @@ void ConnectClient(SOCKET clientSocket)
 		}
 		buffer[recv_length] = '\0';
 		str_buffer = buffer;
-		std::cout << "[Log] " << str_buffer << std::endl;
+
 		message_handle = handler.handleMessage(str_buffer);
 		if (!message_handle) break;
 	}
