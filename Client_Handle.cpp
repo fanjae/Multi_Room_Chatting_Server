@@ -1,5 +1,6 @@
 #include "Client_Handle.h"
 static std::map<std::string, std::set<SOCKET>> chatRooms;
+std::mutex chatRoom_mutex;
 
 ClientEventHandler::ClientEventHandler(SOCKET clientSocket) : socket(clientSocket) {}
 bool ClientEventHandler::handleMessage(const std::string& message)
@@ -12,13 +13,13 @@ bool ClientEventHandler::handleMessage(const std::string& message)
 	{
 		Handle_Exit_Room();
 	}
-	else if (message.substr(0, HANDLE_CREATE_CHATTING_ROOM.length()) == HANDLE_CREATE_CHATTING_ROOM)
+	else if (message.substr(0, CREATE_CHATTING_ROOM.length()) == CREATE_CHATTING_ROOM)
 	{
-		Handle_Create_Chatting_Room(message.substr(HANDLE_CREATE_CHATTING_ROOM.length(), message.length()));
+		Handle_Create_Chatting_Room(message.substr(CREATE_CHATTING_ROOM.length(), message.length()));
 	}
-	else if (message.substr(0, HANDLE_JOIN_CHATTING_ROOM.length()) == HANDLE_JOIN_CHATTING_ROOM)
+	else if (message.substr(0, JOIN_CHATTING_ROOM.length()) == JOIN_CHATTING_ROOM)
 	{
-		Handle_Join_Chatting_Room(message.substr(HANDLE_JOIN_CHATTING_ROOM.length(), message.length()));
+		Handle_Join_Chatting_Room(message.substr(JOIN_CHATTING_ROOM.length(), message.length()));
 	}
 	else if (message.substr(0, CLOSE_SOCKET.length()) == CLOSE_SOCKET)
 	{
@@ -56,6 +57,7 @@ void ClientEventHandler::Handle_Exit_Room()
 {
 	std::cout << "[Log] : " << "Handle_exit_Room" << std::endl;
 	chatRooms[roomName].erase(this->socket);
+	const std::lock_guard<std::mutex> lock(chatRoom_mutex);
 	if (chatRooms[roomName].empty()) 
 	{
 		chatRooms.erase(roomName);
@@ -65,34 +67,38 @@ void ClientEventHandler::Handle_Create_Chatting_Room(const std::string& message)
 {
 	this->roomName = message;
 	std::string send_message = "";
-	if (chatRooms.find(roomName) != chatRooms.end())
 	{
-		send_message = EXIST_ROOM;
-		send(socket, send_message.c_str(), send_message.length(), 0);
+		const std::lock_guard<std::mutex> lock(chatRoom_mutex);
+		if (chatRooms.find(roomName) != chatRooms.end())
+		{
+			send_message = EXIST_ROOM;
+		}
+		else
+		{
+			std::cout << "[Log] : Client Create Room : " << message << std::endl;
+			chatRooms[message].insert(socket);
+			send_message = roomName;
+		}
 	}
-	else
-	{
-		std::cout << "[Log] : Client Create Room : " << message << std::endl;
-		chatRooms[message].insert(socket);
-		send_message = roomName;
-		send(socket, send_message.c_str(), send_message.length(), 0);
-	}
+	send(socket, send_message.c_str(), send_message.length(), 0);
 }
 void ClientEventHandler::Handle_Join_Chatting_Room(const std::string& message)
 {
 	this->roomName = message;
 	std::string send_message = "";
-	if (chatRooms.find(roomName) != chatRooms.end())
 	{
-		send_message = roomName;
-		chatRooms[message].insert(socket);
-		send(socket, send_message.c_str(), send_message.length(), 0);
+		const std::lock_guard<std::mutex> lock(chatRoom_mutex);
+		if (chatRooms.find(roomName) != chatRooms.end())
+		{
+			send_message = roomName;
+			chatRooms[message].insert(socket);
+		}
+		else
+		{
+			send_message = NOT_EXIST_ROOM;
+		}
 	}
-	else
-	{
-		send_message = NOT_EXIST_ROOM;
-		send(socket, send_message.c_str(), send_message.length(), 0);
-	}
+	send(socket, send_message.c_str(), send_message.length(), 0);
 }
 
 void ConnectClient(SOCKET clientSocket)
